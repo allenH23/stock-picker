@@ -18,6 +18,7 @@ st.set_page_config(
 )
 
 # 注入自訂 CSS：放大側邊欄收合按鈕 (Hamburger Icon) 讓手機版與小螢幕更醒目易點擊
+# 移除會造成 iOS 黑暗模式字體消失的硬體背景色，改由系統原生佈景自適應
 st.markdown("""
     <style>
     [data-testid="collapsedControl"] {
@@ -26,9 +27,6 @@ st.markdown("""
         margin-left: 10px;
         margin-top: 10px;
         color: #1a73e8;
-    }
-    [data-testid="stSidebar"] {
-        background-color: #f8f9fa;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -43,7 +41,6 @@ DEFAULT_THEME_DICT = {
     "高股息績優 / 綠能重電": ["1513", "1519", "1503", "1504", "2891", "2882", "2412", "3045", "6285", "2301"]
 }
 
-# 初始化 Session State 中的題材對照表與更新時間
 if "theme_dict" not in st.session_state:
     st.session_state.theme_dict = DEFAULT_THEME_DICT.copy()
 if "theme_last_update" not in st.session_state:
@@ -57,14 +54,8 @@ def get_stock_themes(stock_id: str) -> list:
     return themes if themes else ["一般產業"]
 
 def refresh_market_themes():
-    """
-    模擬向財經大數據中心或盤後伺服器同步最新熱門題材與資金強勢股，
-    可在此處擴充自動抓取最新飆股並歸納至對應題材中。
-    """
-    time.sleep(0.8) # 模擬網路請求延遲
-    # 範例：動態微調部分題材成分股或加入最新強勢資金標的
+    time.sleep(0.8)
     updated_dict = DEFAULT_THEME_DICT.copy()
-    # 假設依據最新盤後資金流向，將特定強勢股自動納入對應題材
     st.session_state.theme_dict = updated_dict
     st.session_state.theme_last_update = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -436,7 +427,6 @@ with st.sidebar:
     )
     st.divider()
     
-    # 4. 熱門題材選股 + 動態更新 Icon 按鈕
     use_theme = st.checkbox("4. 熱門題材選股", value=False)
     
     col_theme_title, col_theme_btn = st.columns([3, 1])
@@ -506,7 +496,7 @@ for rank_num, (_, row) in enumerate(current_5_df.iterrows(), start=start_idx + 1
             st.info(f"💡 **推薦理由**：{row['recommend_reason']}")
         with c2:
             st.markdown("**⚡ 短期操作建議 (5~20日，依 MA5 & ATR 計算)**")
-            st.markdown(f"- 🟢 **建議買入區間**：`{row['short_buy_range']}` 元")
+            st.markdown(f"- 🟢 **建議買入區間**：`{row['short_byte_range'] if 'short_byte_range' in row else row['short_buy_range']}` 元")
             st.markdown(f"- 🎯 **目標停利賣出**：`{row['short_target']}` 元")
             st.markdown(f"- 🛡️ **防守停損價位**：`{row['short_stop']}` 元")
         with c3:
