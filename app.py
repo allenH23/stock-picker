@@ -18,7 +18,6 @@ st.set_page_config(
 )
 
 # 注入自訂 CSS：放大側邊欄收合按鈕 (Hamburger Icon) 讓手機版與小螢幕更醒目易點擊
-# 移除會造成 iOS 黑暗模式字體消失的硬體背景色，改由系統原生佈景自適應
 st.markdown("""
     <style>
     [data-testid="collapsedControl"] {
@@ -36,8 +35,7 @@ st.markdown("""
 # ==========================================
 DEFAULT_THEME_DICT = {
     "AI 伺服器 / 先進封裝 (CoWoS)": ["2330", "2317", "2382", "3231", "2356", "3711", "3131", "3583", "6187", "2454", "3017", "3324"],
-    "矽光子 (CPO) / 光通訊": ["3450", "4979", "3363", "3163", "6442", "4908", "3081", "2345"],
-    "機器人 / 智慧自動化": ["2357", "2395", "6188", "2049", "1597", "4576", "8374", "2308"],
+    "矽光子 CPO / 機器人自動化": ["3450", "4979", "3363", "3163", "6442", "4908", "3081", "2345", "2357", "2395", "6188", "2049"],
     "高股息績優 / 綠能重電": ["1513", "1519", "1503", "1504", "2891", "2882", "2412", "3045", "6285", "2301"]
 }
 
@@ -260,9 +258,9 @@ def filter_and_rank_stocks(df: pd.DataFrame, selections: dict) -> pd.DataFrame:
     
     if selections["fundamental"]["enabled"]:
         lvl = selections["fundamental"]["level"]
-        if lvl == "高（嚴格績優）":
+        if lvl == "嚴格績優":
             cond = (candidates["pe_ratio"] <= 16) & (candidates["dividend_yield"] >= 4.0) & (candidates["rev_yoy"] >= 12)
-        elif lvl == "中（穩健成長）":
+        elif lvl == "穩健成長":
             cond = (candidates["pe_ratio"] <= 24) & (candidates["dividend_yield"] >= 2.5) & (candidates["rev_yoy"] >= 5)
         else:
             cond = (candidates["pe_ratio"] <= 35) & (candidates["pb_ratio"] <= 6.5)
@@ -274,9 +272,9 @@ def filter_and_rank_stocks(df: pd.DataFrame, selections: dict) -> pd.DataFrame:
 
     if selections["technical"]["enabled"]:
         lvl = selections["technical"]["level"]
-        if lvl == "高（強勢突破）":
+        if lvl == "強勢突破":
             cond = (candidates["close"] >= candidates["ma20"]) & (candidates["ma20"] >= candidates["ma60"]) & (candidates["rsi_14"] >= 52)
-        elif lvl == "中（多頭排列）":
+        elif lvl == "多頭排列":
             cond = (candidates["close"] >= candidates["ma20"]) & (candidates["rsi_14"] >= 48)
         else:
             cond = (candidates["close"] >= candidates["ma60"] * 0.96)
@@ -289,9 +287,9 @@ def filter_and_rank_stocks(df: pd.DataFrame, selections: dict) -> pd.DataFrame:
 
     if selections["market"]["enabled"]:
         lvl = selections["market"]["level"]
-        if lvl == "高（法人重倉連買）":
+        if lvl == "法人重倉連買":
             cond = candidates["inst_net_5d"] >= 8000
-        elif lvl == "中（法人溫和布局）":
+        elif lvl == "法人溫和布局":
             cond = candidates["inst_net_5d"] >= 3000
         else:
             cond = candidates["inst_net_5d"] >= 1000
@@ -304,9 +302,9 @@ def filter_and_rank_stocks(df: pd.DataFrame, selections: dict) -> pd.DataFrame:
     if selections["theme"]["enabled"]:
         lvl = selections["theme"]["level"]
         theme_map = {
-            "高（AI 伺服器／先進封裝 CoWoS）": "AI 伺服器 / 先進封裝 (CoWoS)",
-            "中（矽光子 CPO／機器人自動化）": ["矽光子 (CPO) / 光通訊", "機器人 / 智慧自動化"],
-            "低（高股息績優／綠能重電）": "高股息績優 / 綠能重電"
+            "AI 伺服器 / 先進封裝 (CoWoS)": "AI 伺服器 / 先進封裝 (CoWoS)",
+            "矽光子 CPO / 機器人自動化": ["矽光子 (CPO) / 光通訊", "機器人 / 智慧自動化"],
+            "高股息績優 / 綠能重電": "高股息績優 / 綠能重電"
         }
         target_themes = theme_map[lvl]
         if isinstance(target_themes, str):
@@ -403,7 +401,7 @@ with st.sidebar:
     use_fund = st.checkbox("1. 基本面選股", value=True)
     lvl_fund = st.radio(
         "基本面條件等級",
-        ["高（嚴格績優）", "中（穩健成長）", "低（價值轉機）"],
+        ["嚴格績優", "穩健成長", "價值轉機"],
         index=1,
         disabled=not use_fund
     )
@@ -412,7 +410,7 @@ with st.sidebar:
     use_tech = st.checkbox("2. 技術面選股", value=True)
     lvl_tech = st.radio(
         "技術面條件等級",
-        ["高（強勢突破）", "中（多頭排列）", "低（底部支撐反彈）"],
+        ["強勢突破", "多頭排列", "底部支撐反彈"],
         index=0,
         disabled=not use_tech
     )
@@ -421,17 +419,16 @@ with st.sidebar:
     use_mkt = st.checkbox("3. 市場／籌碼面選股", value=True)
     lvl_mkt = st.radio(
         "市場籌碼條件等級",
-        ["高（法人重倉連買）", "中（法人溫和布局）", "低（低檔承接）"],
+        ["法人重倉連買", "法人溫和布局", "低檔承接"],
         index=1,
         disabled=not use_mkt
     )
     st.divider()
     
-    use_theme = st.checkbox("4. 熱門題材選股", value=False)
-    
-    col_theme_title, col_theme_btn = st.columns([3, 1])
-    with col_theme_title:
-        st.markdown("**題材類別選擇**")
+    # 4. 熱門題材選股 + 將更新按鈕與勾選框放在同一行
+    col_theme_cb, col_theme_btn = st.columns([4, 1])
+    with col_theme_cb:
+        use_theme = st.checkbox("4. 熱門題材選股", value=False)
     with col_theme_btn:
         if st.button("🔄", help="點擊更新最新盤後熱門題材與資金強勢股"):
             refresh_market_themes()
@@ -442,7 +439,7 @@ with st.sidebar:
     
     lvl_theme = st.radio(
         "題材類別清單",
-        ["高（AI 伺服器／先進封裝 CoWoS）", "中（矽光子 CPO／機器人自動化）", "低（高股息績優／綠能重電）"],
+        ["AI 伺服器 / 先進封裝 (CoWoS)", "矽光子 CPO / 機器人自動化", "高股息績優 / 綠能重電"],
         index=0,
         disabled=not use_theme,
         label_visibility="collapsed"
@@ -496,7 +493,7 @@ for rank_num, (_, row) in enumerate(current_5_df.iterrows(), start=start_idx + 1
             st.info(f"💡 **推薦理由**：{row['recommend_reason']}")
         with c2:
             st.markdown("**⚡ 短期操作建議 (5~20日，依 MA5 & ATR 計算)**")
-            st.markdown(f"- 🟢 **建議買入區間**：`{row['short_byte_range'] if 'short_byte_range' in row else row['short_buy_range']}` 元")
+            st.markdown(f"- 🟢 **建議買入區間**：`{row['short_buy_range']}` 元")
             st.markdown(f"- 🎯 **目標停利賣出**：`{row['short_target']}` 元")
             st.markdown(f"- 🛡️ **防守停損價位**：`{row['short_stop']}` 元")
         with c3:
